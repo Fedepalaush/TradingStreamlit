@@ -25,3 +25,4 @@ st.text(f"Price: ${latest_day_data:.2f}")
 
 st.subheader("Historical Data")
 st.line_chart(data["Close"])
+st.write('Fede')
