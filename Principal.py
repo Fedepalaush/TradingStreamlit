@@ -36,7 +36,6 @@ data = yf.Ticker(add_combo).history(start=fechaInicio, end=fechaFin, interval=ti
 
 data.drop(columns=['Dividends','Stock Splits'], inplace=True)
 data['RSI'] = ta.rsi(data['Close'], length = 14)
-
 data['Ema200'] =  ta.ema(data["Close"], length=200)
 data['EmaLenta'] =  ta.ema(data["Close"], length=50)
 data['EmaMediana'] =  ta.ema(data["Close"], length=21)
@@ -60,9 +59,6 @@ data.loc[(data['EmaRapida'] < data['EmaMediana']) & (data['EmaRapida'].shift() >
 data['SALIDALARGO'] = 0  # Default value
 data.loc[(data['EmaLenta'] > data['Ema200']) & (data['EmaLenta'].shift() < data['Ema200'].shift()), 'SALIDALARGO'] = 1
 data.loc[(data['EmaLenta'] < data['Ema200']) & (data['EmaLenta'].shift() > data['Ema200'].shift()), 'SALIDALARGO'] = 2
-
-
-st.dataframe(data)
 
 #Precio del último cierre
 latest_day_data = data.iloc[-1].Close
@@ -88,3 +84,4 @@ fig.update_layout(xaxis_rangeslider_visible=False,  # Disable the rangeslider
                   xaxis=dict(rangebreaks=rangebreaks))  # Add the range breaks
 # Display the chart
 st.plotly_chart(fig)
+st.dataframe(data.tail(10))
