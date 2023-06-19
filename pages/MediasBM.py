@@ -61,11 +61,6 @@ for ticker in tickers:
         data.loc[(data['EmaLenta'] > data['Ema200']) & (data['EmaLenta'].shift() < data['Ema200'].shift()), 'SALIDALARGO'] = 1
         data.loc[(data['EmaLenta'] < data['Ema200']) & (data['EmaLenta'].shift() > data['Ema200'].shift()), 'SALIDALARGO'] = 2
 
-
-       
-
-
-
         if data['SALIDACORTO'].tail(3).any():
             if (data['SALIDACORTO'].tail(3) == 1).any():
                 st.write('LONG' + 'CORTO')

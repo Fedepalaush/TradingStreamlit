@@ -16,66 +16,102 @@ if 'df' not in state:
         state.df = pd.read_csv(CSV_FILE_PATH)
     else:
         # Create an empty DataFrame if it doesn't exist
-        state.df = pd.DataFrame(columns=['Ticker', 'Cantidad', 'PrecioCompraD','PrecioCompraP', 'PrecioActual', 'Diferencia', 'PCT'])
+        state.df = pd.DataFrame(columns=['Ticker', 'Cantidad', 'PrecioCompraD','PrecioActualD', 'PrecioCompraP','PrecioActualP', 'DiferenciaP', 'TotalPesos','PCTP' ])
+
+
+
+def getIOLData():
+    IOLData = pd.read_html('https://iol.invertironline.com/mercado/cotizaciones/argentina/cedears/todos')
+    df = IOLData[0]
+
+    # Define a function to split the string and update the DataFrame
+    def split_symbol_description(row):
+        symbol, description = row['Símbolo'].split(maxsplit=1)
+        row['Symbol'] = symbol
+        row['Description'] = description
+        return row
+
+    # Apply the function to each row of the DataFrame
+    df = df.apply(split_symbol_description, axis=1)
+
+    selected_columns = ['Symbol', 'Description', 'Variación Diaria', 'Último Operado']
+    subset_df = df[selected_columns]
+
+    return subset_df
 
 # Function to add a new row
 def add_row():
+    IOLData = getIOLData()
     ticker_value = ticker
     cantidad_value = int(cantidad)
     precio_compra_d_value = float(precio_compra_d)
-    precio_compra_p_value = float(precio_compra_d)
+    precio_compra_p_value = float(precio_compra_p)
+    precio_actual = precioActual(IOLData, ticker)
+    pct = "{:.2f}%".format(((precio_actual / precio_compra_p_value) - 1) * 100)
+    print(precio_actual)
 
     new_row = {
         'Ticker': ticker_value,
         'Cantidad': cantidad_value,
         'PrecioCompraD': precio_compra_d_value,
         'PrecioCompraP': precio_compra_p_value,
-        'PrecioActual': yf.Ticker(ticker_value).history(period='1d')['Close'].values[0],
-        'Diferencia': None,
-        'PCT': None
+        'PrecioActualD': yf.Ticker(ticker_value).history(period='1d')['Close'].values[0],
+        'PrecioActualP': precio_actual,
+        'DiferenciaP': precio_actual - precio_compra_p_value ,
+        'TotalPesos':cantidad_value * precio_compra_p_value,
+        'PCTP':  pct
     }
     state.df.loc[len(state.df)] = new_row
     st.success("New row added successfully.")
 
+def precioActual(df, Ticker):
+    for index, row in df.iterrows():
+        if row['Symbol'] == Ticker:
+            ultimo_operado = row['Último Operado']
+            value = ultimo_operado.replace('.', '').replace(',', '.')
+            return float(value)
+
 # Function to recalculate 'PrecioActual' and 'Diferencia' for all rows
 def recalculate_precio_actual():
+    IOLData = getIOLData()
     for i, row in state.df.iterrows():
         ticker_value = row['Ticker']
-        precio_actual = yf.Ticker(ticker_value).history(period='1d')['Close'].values[0]
-        state.df.at[i, 'PrecioActual'] = precio_actual
-        state.df.at[i, 'Diferencia'] = precio_actual - state.df.at[i, 'PrecioCompra']
-        state.df.at[i, 'PCT'] = "{:.2f}%".format((precio_actual / state.df.at[i, 'PrecioCompra'] - 1) * 100)
+        precio_actualD = yf.Ticker(ticker_value).history(period='1d')['Close'].values[0]
+        precio_actualP = precioActual(IOLData, ticker_value)
+        state.df.at[i, 'PrecioActualD'] = precio_actualD
+        state.df.at[i, 'PrecioActualP'] = precio_actualP
+        state.df.at[i, 'DiferenciaP'] = (precio_actualP * state.df.at[i, 'Cantidad']) - state.df.at[i, 'PrecioCompraP'] * state.df.at[i, 'Cantidad']
+        state.df.at[i, 'PCTP'] = "{:.2f}%".format((precio_actualP / state.df.at[i, 'PrecioCompraP'] - 1) * 100)
+
     st.success("PrecioActual and Diferencia recalculated successfully.")
 
 col1, col2, col3 = st.columns(3)
 with col1:
      st.text('Acciones postivas')
-     count = (state.df['PCT'] > '0%').sum()
+     count = (state.df['PCTP'] > '0%').sum()
      st.text(count)
 with col2:
      st.text('Acciones negativas')
-     count = (state.df['PCT'] < '0%').sum()
+     count = (state.df['PCTP'] < '0%').sum()
      st.text(count)
 with col3:
      st.text('Rendimiento Dolares($)')
-     total = state.df['Diferencia'].sum()
-     formatted_total = f"${total:.2f}"
-     st.write(formatted_total)
+    
 
 col1, col2, col3 = st.columns(3)
 with col1:
      st.text('Total Invertido')
-     count = state.df['TotalPesos'].sum()
+     count = state.df['TotalPesos'].sum() - state.df['DiferenciaP'].sum()
      formatted_total = f"${count:.2f}"
      st.write(formatted_total)
 with col2:
      st.text('Rendimiento Pesos($)')
-     total = state.df['Diferencia'].sum()
+     total = state.df['DiferenciaP'].sum()
      formatted_total = f"${total:.2f}"
      st.write(formatted_total)
 with col3:
-     st.text('Rendimiento Actual ($)')
-     total = state.df['Diferencia'].sum()
+     st.text('Total Actual ($)')
+     total = state.df['TotalPesos'].sum()
      formatted_total = f"${total:.2f}"
      st.write(formatted_total)
 
@@ -84,8 +120,16 @@ st.divider()
 st.dataframe(state.df)
 recalculate_button = st.button('Recalcular')
 st.divider()
+
+for i, row in state.df.iterrows():
+    ticker_value = row['Ticker']
+    st.text(ticker_value)
+
+st.divider()
+
 # Create two columns
 col1, col2 = st.columns(2)
+
 
 # Create text input widgets in the first column
 with col1:
@@ -108,7 +152,7 @@ if button:
 if recalculate_button:
     recalculate_precio_actual()
 
-state.df['TotalPesos'] = state.df['Cantidad'] * state.df['PrecioCompraP']
+state.df['TotalPesos'] = state.df['Cantidad'] * state.df['PrecioActualP']
 # Save the DataFrame to a CSV file
 state.df.to_csv(CSV_FILE_PATH, index=False)
 
