@@ -31,26 +31,27 @@ with st.sidebar:
         index=options_date.index('1d'))
     
 
-data = yf.Ticker(add_combo).history(start=fechaInicio, end=fechaFin, interval=timeframe)
+def infoAccion (ticker):
+    data = yf.Ticker(ticker).history(start=fechaInicio, end=fechaFin, interval=timeframe)
+    data.drop(columns=['Dividends','Stock Splits'], inplace=True)
+    data['RSI'] = ta.rsi(data['Close'], length = 14)
+    data['Ema200'] =  ta.ema(data["Close"], length=200)
+    data['EmaLenta'] =  ta.ema(data["Close"], length=50)
+    data['EmaMediana'] =  ta.ema(data["Close"], length=21)
+    data['EmaRapida'] =  ta.ema(data["Close"], length=8)
 
+    backrollingN = 5
+    data['TENDENCIA_RAPIDA']=data['EmaRapida'].diff(periods=1)
+    data['TENDENCIA_RAPIDA']=data['TENDENCIA_RAPIDA'].rolling(window=backrollingN).mean()
 
-data.drop(columns=['Dividends','Stock Splits'], inplace=True)
-data['RSI'] = ta.rsi(data['Close'], length = 14)
-data['Ema200'] =  ta.ema(data["Close"], length=200)
-data['EmaLenta'] =  ta.ema(data["Close"], length=50)
-data['EmaMediana'] =  ta.ema(data["Close"], length=21)
-data['EmaRapida'] =  ta.ema(data["Close"], length=8)
+    data['TENDENCIA_MEDIANA']=data['EmaMediana'].diff(periods=1)
+    data['TENDENCIA_MEDIANA']=data['TENDENCIA_MEDIANA'].rolling(window=backrollingN).mean()
 
-backrollingN = 5
-data['TENDENCIA_RAPIDA']=data['EmaRapida'].diff(periods=1)
-data['TENDENCIA_RAPIDA']=data['TENDENCIA_RAPIDA'].rolling(window=backrollingN).mean()
+    data['TENDENCIA_LENTA']=data['EmaLenta'].diff(periods=1)
+    data['TENDENCIA_LENTA']=data['TENDENCIA_LENTA'].rolling(window=backrollingN).mean()
+    return data
 
-data['TENDENCIA_MEDIANA']=data['EmaMediana'].diff(periods=1)
-data['TENDENCIA_MEDIANA']=data['TENDENCIA_MEDIANA'].rolling(window=backrollingN).mean()
-
-data['TENDENCIA_LENTA']=data['EmaLenta'].diff(periods=1)
-data['TENDENCIA_LENTA']=data['TENDENCIA_LENTA'].rolling(window=backrollingN).mean()
-
+data = infoAccion(add_combo)
 # Check the conditions and assign values
 data['SALIDACORTO'] = 0  # Default value
 data.loc[(data['EmaRapida'] > data['EmaMediana']) & (data['EmaRapida'].shift() < data['EmaMediana'].shift()), 'SALIDACORTO'] = 1

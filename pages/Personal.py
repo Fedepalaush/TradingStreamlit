@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 import yfinance as yf
 import os
-
+from Principal import infoAccion
 
 from streamlit import session_state as state
 
@@ -121,9 +121,30 @@ st.dataframe(state.df)
 recalculate_button = st.button('Recalcular')
 st.divider()
 
+
 for i, row in state.df.iterrows():
     ticker_value = row['Ticker']
-    st.text(ticker_value)
+    data = infoAccion(ticker_value)
+    data.dropna(inplace=True)
+
+    # Add the first text value in the center
+    st.subheader(ticker_value)
+
+    # Use Streamlit's columns to create three equal-width columns
+    col1, col2, col3 = st.columns(3)
+
+    # Add the remaining three text values in the three columns
+    col1.text('EMA200')
+    if data.iloc[i]['Close'] > data.iloc[i]['Ema200']:
+        arrow = '↑'  # Up arrow symbol
+    else:
+        arrow = '↓'  # Down arrow symbol
+    col1.text(arrow)
+    col2.text('DIF EMA')
+    col2.text(str(data.iloc[-1]['RSI']))
+    col3.text('RSI')
+    col3.text( str(data.iloc[-1]['RSI']))
+
 
 st.divider()
 
