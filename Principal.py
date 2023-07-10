@@ -7,6 +7,8 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import pandas_ta as ta
 import numpy as np
+import seaborn as sns
+import matplotlib.pyplot as plt
 
 # Set wide mode
 st.set_page_config(layout="wide")
@@ -86,3 +88,11 @@ fig.update_layout(xaxis_rangeslider_visible=False,  # Disable the rangeslider
 # Display the chart
 st.plotly_chart(fig)
 st.dataframe(data.tail(10))
+
+#Tendencias en Porcentajes
+tendencias = data.iloc[:,-5:-2]
+tendencias.dropna(inplace=True)
+st.dataframe(tendencias)
+fig = plt.figure(figsize=(18,9))
+sns.boxplot(tendencias)
+st.pyplot(fig)

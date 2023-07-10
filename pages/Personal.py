@@ -21,7 +21,7 @@ if 'df' not in state:
 
 
 def getIOLData():
-    IOLData = pd.read_html('https://iol.invertironline.com/mercado/cotizaciones/argentina/cedears/todos')
+    IOLData = pd.read_html('https://bullmarketbrokers.com/Cotizaciones/cedears')
     df = IOLData[0]
 
     # Define a function to split the string and update the DataFrame
@@ -78,6 +78,7 @@ def recalculate_precio_actual():
         ticker_value = row['Ticker']
         precio_actualD = yf.Ticker(ticker_value).history(period='1d')['Close'].values[0]
         precio_actualP = precioActual(IOLData, ticker_value)
+        print(precio_actualP)
         state.df.at[i, 'PrecioActualD'] = precio_actualD
         state.df.at[i, 'PrecioActualP'] = precio_actualP
         state.df.at[i, 'DiferenciaP'] = (precio_actualP * state.df.at[i, 'Cantidad']) - state.df.at[i, 'PrecioCompraP'] * state.df.at[i, 'Cantidad']
