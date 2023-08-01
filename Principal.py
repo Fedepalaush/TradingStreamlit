@@ -9,7 +9,10 @@ import pandas_ta as ta
 import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt
+from streamlit import session_state as state
+import os 
 
+CSV_FILE_PATH = 'ratios.csv'
 # Set wide mode
 st.set_page_config(layout="wide")
 options_date = ['1h','1d','5d','1wk','1mo','3mo']
@@ -32,6 +35,14 @@ with st.sidebar:
         options_date,
         index=options_date.index('1d'))
     
+if 'ratios' not in state:
+    # Load the DataFrame from the CSV file if it exists
+    if os.path.isfile(CSV_FILE_PATH):
+        state.ratios = pd.read_csv(CSV_FILE_PATH)
+    else:
+        # Create an empty DataFrame if it doesn't exist
+        state.ratios = pd.DataFrame()
+
 
 def infoAccion (ticker):
     data = yf.Ticker(ticker).history(start=fechaInicio, end=fechaFin, interval=timeframe)
@@ -96,3 +107,4 @@ st.dataframe(tendencias)
 fig = plt.figure(figsize=(18,9))
 sns.boxplot(tendencias)
 st.pyplot(fig)
+st.text(st.session_state.ratios[st.session_state.ratios['ticker']=='AMZN'])

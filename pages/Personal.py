@@ -16,7 +16,7 @@ if 'df' not in state:
         state.df = pd.read_csv(CSV_FILE_PATH)
     else:
         # Create an empty DataFrame if it doesn't exist
-        state.df = pd.DataFrame(columns=['Ticker', 'Cantidad', 'PrecioCompra', 'PrecioActual', 'Total','PCT' ])
+        state.df = pd.DataFrame(columns=['Ticker', 'Cantidad', 'PrecioCompra', 'PrecioActual', 'PCT', 'Ratio', 'Total' ])
 
 
 
@@ -28,14 +28,16 @@ def add_row(ticker_value, cantidad_value, precio_compra):
     precio_compra = float(precio_compra)
     precio_actual = precio_compra
     pct = "{:.2f}%".format(((precio_actual / precio_compra) - 1) * 100)
-    print(precio_actual)
+    ratio = st.session_state.ratios[st.session_state.ratios['ticker']==ticker]['Ratio Cedear']
+
 
     new_row = {
         'Ticker': ticker_value,
         'Cantidad': cantidad_value,
         'PrecioCompra': precio_compra,
         'PrecioActual': yf.Ticker(ticker_value).history(period='1d')['Close'].values[0],
-        'PCT':  pct
+        'PCT':  pct,
+        'Ratio' : ratio.values[0]
     }
     state.df.loc[len(state.df)] = new_row
     st.success("Acción Agregada")
@@ -142,7 +144,7 @@ if button:
 if recalculate_button:
     recalculate_precio_actual()
 
-state.df['Total'] = state.df['Cantidad'] * state.df['PrecioActual']
+state.df['Total'] = (state.df['PrecioActual'] /state.df['Ratio'] ) * state.df['Cantidad']
 # Save the DataFrame to a CSV file
 state.df.to_csv(CSV_FILE_PATH, index=False)
 
