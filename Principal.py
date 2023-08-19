@@ -25,7 +25,7 @@ with st.sidebar:
 )
     fechaInicio = st.date_input(
         "Seleccione Fecha Inicio",
-        datetime.date.today() - timedelta(days=365))
+        datetime.date.today() - timedelta(days=1825))
     fechaFin = st.date_input(
         "Seleccione Fecha Fin",
         datetime.date.today())
@@ -107,3 +107,10 @@ st.dataframe(tendencias)
 fig = plt.figure(figsize=(18,9))
 sns.boxplot(tendencias)
 st.pyplot(fig)
+
+anual = data
+anual['AÑO'] = anual.index.year
+anual['MES'] = anual.index.month
+anual.dropna(inplace=True)
+anual['DIFERENCIA'] = anual['Close'].pct_change()*100
+st.dataframe(anual)

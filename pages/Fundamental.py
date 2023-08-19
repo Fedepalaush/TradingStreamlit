@@ -4,16 +4,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 import yfinance as yf
 
-
-import streamlit as st
-import matplotlib.pyplot as plt
-import pandas as pd
-import yfinance as yf
-
-import streamlit as st
-import matplotlib.pyplot as plt
-import pandas as pd
-import yfinance as yf
 from dataBM import tickersBM
 
 with st.sidebar:
