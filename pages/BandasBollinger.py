@@ -20,7 +20,7 @@ for ticker in tickersBM:
         banda_superior = bollinger_bands.tail(3)['BBU_20_2.0'].values
         rsi_values = rsi.tail(3).values
           
-        if (precio_actual < banda_inferior).any() and (rsi_values < 35).any():
+        if (precio_actual < banda_inferior).any() and (rsi_values < 30).any():
             st.text(ticker + " Compra")
         else:
             pass        

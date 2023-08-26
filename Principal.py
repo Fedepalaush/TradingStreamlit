@@ -26,9 +26,6 @@ with st.sidebar:
     fechaInicio = st.date_input(
         "Seleccione Fecha Inicio",
         datetime.date.today() - timedelta(days=1825))
-    fechaFin = st.date_input(
-        "Seleccione Fecha Fin",
-        datetime.date.today())
     
     timeframe = st.selectbox(
         "Seleccione timeframe",
@@ -45,7 +42,7 @@ if 'ratios' not in state:
 
 
 def infoAccion (ticker):
-    data = yf.Ticker(ticker).history(start=fechaInicio, end=fechaFin, interval=timeframe)
+    data = yf.Ticker(ticker).history(start=fechaInicio, end=datetime.date.today(), interval=timeframe)
     data.drop(columns=['Dividends','Stock Splits'], inplace=True)
     data['RSI'] = ta.rsi(data['Close'], length = 14)
     data['Ema200'] =  ta.ema(data["Close"], length=200)
@@ -64,7 +61,39 @@ def infoAccion (ticker):
     data['TENDENCIA_LENTA']=data['TENDENCIA_LENTA'].rolling(window=backrollingN).mean()
     return data
 
+def calculaMeses(data):
+    df = pd.DataFrame(data)
+    df['Fecha'] = df.index
+    df['Fecha'] = pd.to_datetime(df['Fecha'])  # Convertir la columna 'Fecha' a tipo de dato datetime
+
+    # Crear una nueva columna 'Year' y 'Month' para separar el año y el mes
+    df['Year'] = df['Fecha'].dt.year
+    df['Month'] = df['Fecha'].dt.month
+
+    # Agrupar los datos por año y mes, y seleccionar el primer y último valor
+    agg_funcs = {'Open': 'first', 'Close': 'last'}
+    result = df.groupby(['Year', 'Month']).agg(agg_funcs)
+
+    # Resetear el índice para que los años y meses sean columnas en el nuevo DataFrame
+    result.reset_index(inplace=True)
+    result['PCT'] = (((result['Close']/result['Open'])-1)*100)
+    
+        # Pivot the DataFrame to create a matrix suitable for a heatmap
+    pivot_result = result.pivot(index='Month', columns='Year', values='PCT')
+
+    # Create the heatmap
+    fig = plt.figure(figsize=(7, 3))  # Adjust the figure size as needed
+    sns.heatmap(pivot_result, annot=True, fmt=".2f", cmap="RdYlGn", linewidths=.5)
+
+    # Establecer etiquetas y título
+    plt.xlabel('Año')
+    plt.ylabel('Mes')
+    plt.title('Variación por Año y Mes')
+    st.pyplot(fig)
+    
+
 data = infoAccion(add_combo)
+
 # Check the conditions and assign values
 data['SALIDACORTO'] = 0  # Default value
 data.loc[(data['EmaRapida'] > data['EmaMediana']) & (data['EmaRapida'].shift() < data['EmaMediana'].shift()), 'SALIDACORTO'] = 1
@@ -114,3 +143,8 @@ anual['MES'] = anual.index.month
 anual.dropna(inplace=True)
 anual['DIFERENCIA'] = anual['Close'].pct_change()*100
 st.dataframe(anual)
+
+col1, col2 = st.columns (2)
+
+with col1:
+    calculaMeses(data)
