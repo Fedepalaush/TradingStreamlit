@@ -8,6 +8,7 @@ from streamlit import session_state as state
 
 # Define the path to the CSV file
 CSV_FILE_PATH = 'data.csv'
+CSV_FILE_PATH_RATIOS = 'ratios.csv'
 
 # Check if the DataFrame is stored in session state
 if 'df' not in state:
@@ -16,8 +17,12 @@ if 'df' not in state:
         state.df = pd.read_csv(CSV_FILE_PATH)
     else:
         # Create an empty DataFrame if it doesn't exist
-        state.df = pd.DataFrame(columns=['Ticker', 'Cantidad', 'PrecioCompra', 'PrecioActual', 'PCT', 'Ratio', 'Total' ])
+        state.df = pd.DataFrame(columns=['Ticker', 'Cantidad', 'PrecioCompra', 'PrecioActual', 'PCT', 'Ratio', 'Total', 'TotalIndividual' ])
 
+if 'ratios' not in state:
+    # Load the DataFrame from the CSV file if it exists
+    if os.path.isfile(CSV_FILE_PATH_RATIOS):
+        state.ratios = pd.read_csv(CSV_FILE_PATH_RATIOS)
 
 
 
@@ -26,10 +31,12 @@ def add_row(ticker_value, cantidad_value, precio_compra):
     ticker_value = ticker
     cantidad_value = int(cantidad)
     precio_compra = float(precio_compra)
-    precio_actual = precio_compra
+    precio_actual = yf.Ticker(ticker_value).history(period='1d')['Close'].values[0]
     pct = "{:.2f}%".format(((precio_actual / precio_compra) - 1) * 100)
     ratio = st.session_state.ratios[st.session_state.ratios['ticker']==ticker]['Ratio Cedear']
-
+    total = float((precio_actual /ratio.values[0] ) * cantidad_value)
+    totalIndividual = (((total)/(float((precio_compra /ratio.values[0] ) * cantidad_value))-1)*100)
+    
 
     new_row = {
         'Ticker': ticker_value,
@@ -37,10 +44,14 @@ def add_row(ticker_value, cantidad_value, precio_compra):
         'PrecioCompra': precio_compra,
         'PrecioActual': yf.Ticker(ticker_value).history(period='1d')['Close'].values[0],
         'PCT':  pct,
-        'Ratio' : ratio.values[0]
+        'Ratio' : ratio.values[0],
+        'Total' : total,
+        'TotalIndividual' : totalIndividual
+
     }
     state.df.loc[len(state.df)] = new_row
     st.success("Acción Agregada")
+    st.experimental_rerun()
 
 
 # Function to recalculate 'PrecioActual' and 'Diferencia' for all rows
@@ -51,14 +62,15 @@ def recalculate_precio_actual():
         precio_actual = yf.Ticker(ticker_value).history(period='1d')['Close'].values[0]
         state.df.at[i, 'PrecioActual'] = precio_actual
         state.df.at[i, 'PCT'] = "{:.2f}%".format((precio_actual / state.df.at[i, 'PrecioCompra'] - 1) * 100)
+        state.df.at[i, 'Total'] = float((precio_actual /state.df.at[i, 'Ratio'] ) * state.df.at[i, 'Cantidad'])
+        state.df.at[i, 'TotalIndividual'] =((precio_actual /state.df.at[i, 'Ratio'] ) * state.df.at[i, 'Cantidad']) /  ((state.df.at[i, 'PrecioCompra'] /state.df.at[i, 'Ratio']) * state.df.at[i, 'Cantidad']) 
 
-    st.success("PrecioActual and Diferencia recalculated successfully.")
+    st.success("Precio Actual and Diferencia recalculated successfully.")
 
 col1, col2, col3 = st.columns(3)
 with col1:
      st.text('Acciones postivas')
-     #count = (state.df['PCT'] > '0%').sum()
-     count = 0
+     count = (state.df['PCT'] > '0%').sum()
      st.text(count)
 with col2:
      st.text('Acciones negativas')
@@ -66,6 +78,7 @@ with col2:
      st.text(count)
 with col3:
      st.text('Rendimiento Dolares($)')
+
     
 
 col1, col2, col3 = st.columns(3)
@@ -134,11 +147,25 @@ with col1:
     col11, col12 = st.columns(2)
     with col11:
      button = st.button('Agregar')
+
+# Create text input widgets in the second column
+with col2:
+    st.text('Vender Accion')
+    tickerVenta = st.text_input('Ticker Venta')
+    cantidad = st.text_input('Cantidad Venta')
+
+    col11, col12 = st.columns(2)
+    with col11:
+     buttonVender = st.button('Venta')
    
 
 # Check if the button is clicked
 if button:
     add_row(ticker, cantidad, precio_compra)
+
+# Check if the button is clicked
+if buttonVender:
+    add_row(tickerVenta, cantidad, precio_compra)
 
 # Check if the recalculate button is clicked
 if recalculate_button:

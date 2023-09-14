@@ -32,7 +32,7 @@ def graficoVelas(data):
 
 tickers = tickersBM
 for ticker in tickers:
-    data = yf.Ticker(ticker).history('5y')
+    data = yf.Ticker(ticker).history(period='90d', interval='1h')
     try:
         data.drop(columns=['Dividends','Stock Splits'], inplace=True)
         data['RSI'] = ta.rsi(data['Close'], length = 14)
@@ -66,9 +66,6 @@ for ticker in tickers:
                 graficoVelas(data)
             #if (data['SALIDALARGO'].tail(3) == 2).any():
              #   st.write('SHORT' + 'LARGO')
-            
 
-        
-    
     except:
         pass
