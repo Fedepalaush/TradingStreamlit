@@ -20,7 +20,7 @@ options_date = ['1h','1d','5d','1wk','1mo','3mo']
 with st.sidebar:
     add_combo = st.selectbox(
         "Seleccione una Acción",
-        ['AAPL', 'MSFT', 'KO', 'BA'],
+        ['AAPL', 'MSFT', 'KO', 'BA', 'TD'],
         index=0 
 )
     fechaInicio = st.date_input(
@@ -43,6 +43,7 @@ if 'ratios' not in state:
 
 def infoAccion (ticker):
     data = yf.Ticker(ticker).history(start=fechaInicio, end=datetime.date.today(), interval=timeframe)
+    st.dataframe(data)
     data.drop(columns=['Dividends','Stock Splits'], inplace=True)
     data['RSI'] = ta.rsi(data['Close'], length = 14)
     data['Ema200'] =  ta.ema(data["Close"], length=200)
