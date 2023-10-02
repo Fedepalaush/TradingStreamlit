@@ -43,6 +43,10 @@ if 'ratios' not in state:
 
 def infoAccion (ticker):
     data = yf.Ticker(ticker).history(start=fechaInicio, end=datetime.date.today(), interval=timeframe)
+    patrones = pd.DataFrame()
+    patrones = data.ta.cdl_pattern(name="all")
+    st.dataframe(patrones)
+    data['invertedhammer'] = data.ta.cdl_pattern('invertedhammer')
     st.dataframe(data)
     data.drop(columns=['Dividends','Stock Splits'], inplace=True)
     data['RSI'] = ta.rsi(data['Close'], length = 14)
