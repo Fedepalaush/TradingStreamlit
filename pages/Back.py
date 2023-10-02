@@ -1,6 +1,6 @@
 import streamlit as st
 import yfinance as yf
-import talib
+import pandas_ta as ta
 from backtesting import Backtest, Strategy
 from backtesting.lib import crossover
 
@@ -13,7 +13,7 @@ class RsiOscillator(Strategy):
     rsi_window = 10
 
     def init(self):
-        self.rsi = self.I(talib.RSI, self.data.Close, self.rsi_window)
+        self.rsi = self.I(ta.rsi, self.data.Close, self.rsi_window)
 
     def next(self):
         if crossover(self.rsi, self.upper_bound):
@@ -26,8 +26,9 @@ class EmaCross(Strategy):
     lenta = 22
 
     def init(self):
-        self.ema_rapida = self.I(talib.EMA, self.data.Close, self.rapida)
-        self.ema_lenta = self.I(talib.EMA, self.data.Close, self.lenta)
+        self.ema_rapida = self.I(ta.ema, data.Close, self.rapida)
+        self.ema_lenta = self.I(ta.ema, data.Close, self.lenta)
+        print(self.ema_lenta)
 
     def next(self):
         if crossover(self.ema_lenta, self.ema_rapida):
